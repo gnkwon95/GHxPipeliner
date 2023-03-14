@@ -45,7 +45,7 @@ def read_prefix_to_df(prefix, endtime_nodash, s3_client):
     full_df = []
 
     for f in filenames:
-        response = s3_client.get_object(Bucket=bucket_name, Key=f"{premart_dir}/{f}")
+        response = s3_client.get_object(Bucket=bucket_name, Key=f"{prefix}/{f}")
         tdf = pd.read_csv(response.get("Body"))
         full_df.append(tdf)
     return pd.concat(full_df)
@@ -59,7 +59,6 @@ def main():
     print("token = ", args.token)
 
     ts_nodash = args.ts_nodash
-    startTime = (datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S") - timedelta(minutes=60)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     s3_client = boto3.client(
         "s3",
@@ -69,6 +68,7 @@ def main():
 
 
     df = read_prefix_to_df("premart/author", args.ts_nodash, s3_client) # 24 * 7 개 csv 합한 큰 테이블
+    df['date']=df['date'].astype(str)
 
     coins = set(df['key'])
 
@@ -100,20 +100,16 @@ def main():
         issue_rates.append([coin, new_author_rate, heavy_author_rate])
     
     issue_df = pd.DataFrame(issue_rates, columns=['coin', 'new_author_rate', 'heavy_author_rate'])
+    issue_df['date'] = ts_nodash[:8]
+    issue_df['time'] = ts_nodash[9:11]
 
     issue_df.to_csv('/tmp/issue_df.csv')
 
 
     bucket_name = "ghpipeliner"
 
-    s3 = boto3.client(
-        's3',
-        aws_access_key_id=args.aws_access_key_id,
-        aws_secret_access_key=args.aws_secret_access_key
-    )
-
     endTimeFormatted = args.ts_nodash.replace("T", "")[2:10]
-    s3.upload_file('/tmp/issue_df.csv', bucket_name, f"mart/issue/{endTimeFormatted}.csv")
+    s3_client.upload_file('/tmp/issue_df.csv', bucket_name, f"mart/issue/{endTimeFormatted}.csv")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,3 @@
-## 코드 수정중입니다. ##
-
 import requests
 import sys
 import pandas as pd
@@ -64,10 +62,17 @@ def main():
     args = parse_args()
 
     token = args.token
-    # endTime으로 받아와서 startTime을 역산해야하는게 맞는것같은데 확인 (idf -> 최근 일주일치 계산)
-    startTime = (datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S") - timedelta(minutes=60)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    endTime = datetime.strptime(startTime, "%Y-%m-%dT%H:%M:%SZ") + timedelta(days=7)
-    endTime_str = endTime.strftime("%Y%m%dT%H%M%S")
+    
+    # 기존 코드
+    # startTime = (datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S") - timedelta(minutes=60)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    # endTime = datetime.strptime(startTime, "%Y-%m-%dT%H:%M:%SZ") + timedelta(days=7)
+    # endTime_str = endTime.strftime("%Y%m%dT%H%M%S")
+
+    # endTime으로 수정
+    endTime = datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S") - timedelta(minutes=60)
+    endTime_str = (datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S") - timedelta(minutes=60)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    # startTime = datetime.strptime(endTime_str, "%Y-%m-%dT%H:%M:%SZ") - timedelta(days=7)
+    # startTime_str = endTime.strftime("%Y%m%dT%H%M%S")
     
     s3_client = boto3.client(
         's3',
@@ -116,12 +121,11 @@ def main():
 
         idf_ = pd.DataFrame(st, columns=columns)
 
-        startTimeFormatted = startTime.replace(":", "")
+        endTimeFormatted = endTime.replace(":", "")
 
-        # idf_.to_csv(f'/tmp/{startTimeFormatted[:8]}.csv')
         idf_.to_csv('/tmp/idf.csv')
 
-        s3_client.upload_file('/tmp/idf.csv', bucket_name, f"mart/idf/{coin}/{startTimeFormatted[:15]}.csv") # 8 -> 15 변경
+        s3_client.upload_file('/tmp/idf.csv', bucket_name, f"mart/idf/{coin}/{endTimeFormatted[:15]}.csv") # 8 -> 15 변경
         s3_client.upload_file('/tmp/idf.csv', bucket_name, f"mart/idf/{coin}/latest.csv")
 
 if __name__ == "__main__":
