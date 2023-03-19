@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HB데모</title>
+    <!-- <base href="/" /> -->
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="../assets/js/html5shiv.js"></script>
+    <script src="../assets/js/respond.min.js"></script>
+    <![endif]-->
+    <!-- <link href="{{ url_for('static',filename='css/knit.css') }}" rel="stylesheet"> -->
+</head>
+
+<body>
+<nav class="navbar navbar-default navbar-collapse mg-reset" role="navigation">
+    <ul class="nav nav-pills">
+        <li><font color="blue">XGBoost 데모페이지</font></li>
+    </ul>
+</nav>
+
+<div class="container-full">
+    <button type="submit" class="btn btn-success" id="binance" value="ohlcv">불러오기</button>
+    <div class="well pd-bottom-sm clearfix hidden-xs">
+        <form role="form" method="POST">
+            <font size=4><b>open :</b> <input type="text" id="open" name="open" value='{{ open }}' placeholder="" size="20"></font>
+            <br>
+            <font size=4><b>high :</b> <input type="text" id="high" name="high" value='{{ high }}' placeholder="" size="20"></font>
+            <br>
+            <font size=4><b>low :</b> <input type="text" id="low" name="low" value='{{ low }}' placeholder="" size="20"></font>
+            <br>
+            <font size=4><b>volume :</b> <input type="text" id="volume" name="volume" value='{{ volume }}' placeholder="" size="20"></font>
+            <br>
+            <button type="submit" class="btn btn-success" name="submit" value="submit">확인</button>
+        </form>
+    </div>
+    <br>
+</div>
+<div>
+    <font size="40"><b id="answer"></b></font>
+</div>
+<div id="pred">
+    <font size="40"><b>예측 {{pred}}</b></font>
+</div>
+
+<script type="text/javascript" src="{{ url_for('static',filename='binance.js') }}"></script>
+
+</body>
+</html>
