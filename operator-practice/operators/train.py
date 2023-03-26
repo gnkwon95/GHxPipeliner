@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import json
 from datetime import datetime, timedelta
+from random import random
 import pytz
 
 from pycaret.classification import *
@@ -21,7 +22,17 @@ def load_data(from_dt, to_dt, cols, s3):
                 file_name = f'{dt + timedelta(hours=hr, minutes=5, seconds=2)} candles.json'
                 response = s3.get_object(Bucket='hb-ohlcv-buy-or-sell', Key=file_name)
             obj = json.loads(response['Body'].read().decode('utf-8'))
-            df = pd.concat([df, pd.DataFrame(obj['candles'])[cols]])
+
+            dic_with_sentiment = []
+
+            # create dummy data
+            for row in obj['candles']:
+                row['sentiment'] = 2 * random() -1 
+                row['new_author_rate'] = random()
+                row['heavy_author_rate'] = random()
+
+                dic_with_sentiment.append(row)
+            df = pd.concat([df, pd.DataFrame(dic_with_sentiment)[cols]])
         dt = dt + timedelta(days=1)
         
     df.reset_index(drop=True, inplace=True)
@@ -56,7 +67,11 @@ if __name__ == "__main__":
     session = boto3.session.Session(profile_name='default')
     s3 = session.client('s3')
     print("Load data...")
-    df = load_data(from_dt, to_dt, ['candle_date_time_kst', 'open', 'high', 'low', 'close', 'volume'], s3)
+    cols = [
+        'candle_date_time_kst', 'open', 'high', 'low', 'close', 'volume',
+        'sentiment', 'new_author_rate', 'heavy_author_rate',
+    ]
+    df = load_data(from_dt, to_dt, cols, s3)
 
     print("Preprocess data...")
     data = preprocess_data(df)
