@@ -20,6 +20,7 @@ s3_data = "data/movie_review.csv"
 local_script = "./dags/scripts/spark/random_text_classification.py"
 s3_script = "scripts/random_text_classification.py"
 s3_clean = "clean_data/"
+
 SPARK_STEPS = [
     {
         "Name": "Move raw data from S3 to HDFS",
@@ -99,11 +100,6 @@ JOB_FLOW_OVERRIDES = {
     "ServiceRole": "EMR_DefaultRole",
 }
 
-# helper function
-def _local_to_s3(filename, key, bucket_name=BUCKET_NAME):
-    s3 = S3Hook()
-    s3.load_file(filename=filename, bucket_name=bucket_name, replace=True, key=key)
-
 
 default_args = {
     "owner": "airflow",
@@ -122,23 +118,10 @@ dag = DAG(
     default_args=default_args,
     schedule_interval="0 10 * * *",
     max_active_runs=1,
+    catchup=False,
 )
 
 start_data_pipeline = DummyOperator(task_id="start_data_pipeline", dag=dag)
-
-data_to_s3 = PythonOperator(
-    dag=dag,
-    task_id="data_to_s3",
-    python_callable=_local_to_s3,
-    op_kwargs={"filename": local_data, "key": s3_data,},
-)
-
-script_to_s3 = PythonOperator(
-    dag=dag,
-    task_id="script_to_s3",
-    python_callable=_local_to_s3,
-    op_kwargs={"filename": local_script, "key": s3_script,},
-)
 
 # Create an EMR cluster
 create_emr_cluster = EmrCreateJobFlowOperator(
@@ -149,32 +132,32 @@ create_emr_cluster = EmrCreateJobFlowOperator(
     dag=dag,
 )
 
-# Add your steps to the EMR cluster
-step_adder = EmrAddStepsOperator(
-    task_id="add_steps",
-    job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
-    aws_conn_id="aws_default",
-    steps=SPARK_STEPS,
-    params={
-        "BUCKET_NAME": BUCKET_NAME,
-        "s3_data": s3_data,
-        "s3_script": s3_script,
-        "s3_clean": s3_clean,
-    },
-    dag=dag,
-)
+# # Add your steps to the EMR cluster
+# step_adder = EmrAddStepsOperator(
+#     task_id="add_steps",
+#     job_flow_id="{{ task_instance.xcom_pull(task_ids='create_emr_cluster', key='return_value') }}",
+#     aws_conn_id="aws_default",
+#     steps=SPARK_STEPS,
+#     params={
+#         "BUCKET_NAME": BUCKET_NAME,
+#         "s3_data": s3_data,
+#         "s3_script": s3_script,
+#         "s3_clean": s3_clean,
+#     },
+#     dag=dag,
+# )
 
-last_step = len(SPARK_STEPS) - 1
-# wait for the steps to complete
-step_checker = EmrStepSensor(
-    task_id="watch_step",
-    job_flow_id="{{ task_instance.xcom_pull('create_emr_cluster', key='return_value') }}",
-    step_id="{{ task_instance.xcom_pull(task_ids='add_steps', key='return_value')["
-    + str(last_step)
-    + "] }}",
-    aws_conn_id="aws_default",
-    dag=dag,
-)
+# last_step = len(SPARK_STEPS) - 1
+# # wait for the steps to complete
+# step_checker = EmrStepSensor(
+#     task_id="watch_step",
+#     job_flow_id="{{ task_instance.xcom_pull('create_emr_cluster', key='return_value') }}",
+#     step_id="{{ task_instance.xcom_pull(task_ids='add_steps', key='return_value')["
+#     + str(last_step)
+#     + "] }}",
+#     aws_conn_id="aws_default",
+#     dag=dag,
+# )
 
 # Terminate the EMR cluster
 terminate_emr_cluster = EmrTerminateJobFlowOperator(
@@ -186,6 +169,4 @@ terminate_emr_cluster = EmrTerminateJobFlowOperator(
 
 end_data_pipeline = DummyOperator(task_id="end_data_pipeline", dag=dag)
 
-start_data_pipeline >> [data_to_s3, script_to_s3] >> create_emr_cluster
-create_emr_cluster >> step_adder >> step_checker >> terminate_emr_cluster
-terminate_emr_cluster >> end_data_pipeline
+start_data_pipeline >> create_emr_cluster >> terminate_emr_cluster >> end_data_pipeline

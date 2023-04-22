@@ -7,6 +7,7 @@ from datetime import timedelta
 import requests
 import boto3
 from io import StringIO
+import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -25,9 +26,10 @@ def main():
     print("token = ", args.token)
 
     endTime = datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S").strftime("%Y-%m-%dT%H:%M:%SZ")
-    startTime = (datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S") - timedelta(minutes=60)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    startTime = (datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S") - timedelta(minutes=15)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        # 원래 한시간으로 해야하지만 API 이슈로 샘플데이터, 4분의1만 사용
 
-    params = {"query":"#btc", # "#tesla OR #ElonMusk"
+    params = {"query":"#btc -is:retweet",
             "tweet.fields":"created_at",
             "expansions":"author_id",
             "user.fields":"created_at",
@@ -36,11 +38,10 @@ def main():
             "max_results":"100"
             }
 
-    query_dics = {"bitcoin": "#btc",
-                "etherium": "#eth",
-                "ripple": "#xrp",
-                "aida": "#ada",
-                "solana": "#sol"}   
+    query_dics = {"bitcoin": "#btc -is:retweet",
+                "ripple": "#xrp -is:retweet",
+                "aida": "#ada -is:retweet",
+                "solana": "#sol -is:retweet"}   
 
     count_storage = []
     query_storage = []
@@ -53,13 +54,13 @@ def main():
         next_token = None
 
         while(has_next):
-            params = {"query":query, # "#tesla OR #ElonMusk"
+            params = {"query":query, # "#btc"
                 "tweet.fields":"created_at",
                 "expansions":"author_id",
                 "user.fields":"created_at",
                 "start_time":startTime,
                 "end_time":endTime,
-                "max_results":"100",
+                "max_results":"100"
                 "tz":"KST"
                 }
 
@@ -72,6 +73,7 @@ def main():
 
 
             response_json = r.json()
+            print(response_json)
             total_tweets += response_json['meta']['result_count']
             if ("data" not in r.json()):
                 break
@@ -92,10 +94,10 @@ def main():
     query_df = pd.DataFrame(query_storage)
     query_df = query_df[['key', 'id', 'author_id', 'created_at', 'text']]
 
-    count_df.to_csv('/tmp/counts.csv')
-    query_df.to_csv('/tmp/twits.csv')
+    count_df.to_csv('/home/ubuntu/shlee/tmp/counts.csv')
+    query_df.to_csv('/home/ubuntu/shlee/tmp/twits.csv')
 
-    bucket_name="pipeliner-kwon"
+    bucket_name = "ghpipeliner"
 
     s3 = boto3.client(
         's3',
@@ -103,11 +105,11 @@ def main():
         aws_secret_access_key=args.aws_secret_access_key
     )
 
-    startTimeFormatted = startTime.replace(":", "")
+    endTimeFormatted = endTime.replace(":", "")
 
-    s3.upload_file('/tmp/twits.csv', bucket_name, f"hourly_twits/{startTimeFormatted[:15]}.csv")
-    s3.upload_file('/tmp/counts.csv', bucket_name, f"hourly_twit_counts/{startTImeFormatted[:15]}.csv")
-
+    s3.upload_file('/home/ubuntu/shlee/tmp/twits.csv', bucket_name, f"hourly_twits/{endTimeFormatted[:15]}.csv")
+    s3.upload_file('/home/ubuntu/shlee/tmp/counts.csv', bucket_name, f"hourly_twit_counts/{endTimeFormatted[:15]}.csv")
+  
     print("Put object to S3 complete")
 
 if __name__ == "__main__":
