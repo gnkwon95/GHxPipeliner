@@ -41,7 +41,7 @@ def main():
     token = args.token
     print("ts = ", args.ts_nodash)
     print("token = ", args.token)
-    nltk.download('punkt')
+    time.sleep(60*5)
 
     ts_nodash_str = datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S").strftime("%Y-%m-%dT%H:%M:%SZ")
     startTime = (datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S") - timedelta(minutes=15)).strftime("%Y-%m-%dT%H:%M:%SZ")

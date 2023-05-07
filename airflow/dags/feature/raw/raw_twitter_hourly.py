@@ -25,8 +25,9 @@ def main():
     print("ts = ", args.ts_nodash)
     print("token = ", args.token)
 
-    endTime = datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S").strftime("%Y-%m-%dT%H:%M:%SZ")
-    startTime = (datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S") - timedelta(minutes=15)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    ts_nodash_str = datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S").strftime("%Y-%m-%dT%H:%M:%SZ")
+    endTime = (datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S") - timedelta(minutes=15)).strftime("%Y-%m-%dT%H:%M:%S+09:00")
+    startTime = (datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S") - timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%M:%S+09:00")
         # 원래 한시간으로 해야하지만 API 이슈로 샘플데이터, 4분의1만 사용
 
     params = {"query":"#btc -is:retweet",
@@ -46,6 +47,8 @@ def main():
     count_storage = []
     query_storage = []
 
+    print("start processing")
+
     for key, query in query_dics.items():
         total_tweets = 0
         has_next = True
@@ -61,7 +64,6 @@ def main():
                 "start_time":startTime,
                 "end_time":endTime,
                 "max_results":"100"
-                "tz":"KST"
                 }
 
             if (next_token is not None):
@@ -85,7 +87,7 @@ def main():
                 print("end of token")
                 has_next = False
 
-        count_storage.append([key, startTime, total_tweets])
+        count_storage.append([key, startTime[:19], total_tweets])
         for i in query_tmp:
             i['key']=key
         query_storage.extend(query_tmp)
@@ -94,8 +96,8 @@ def main():
     query_df = pd.DataFrame(query_storage)
     query_df = query_df[['key', 'id', 'author_id', 'created_at', 'text']]
 
-    count_df.to_csv('/home/ubuntu/shlee/tmp/counts.csv')
-    query_df.to_csv('/home/ubuntu/shlee/tmp/twits.csv')
+    count_df.to_csv('counts.csv')
+    query_df.to_csv('twits.csv')
 
     bucket_name = "ghpipeliner"
 
@@ -105,10 +107,10 @@ def main():
         aws_secret_access_key=args.aws_secret_access_key
     )
 
-    endTimeFormatted = endTime.replace(":", "")
+    endTimeFormatted = ts_nodash_str.replace(":", "")
 
-    s3.upload_file('/home/ubuntu/shlee/tmp/twits.csv', bucket_name, f"hourly_twits/{endTimeFormatted[:15]}.csv")
-    s3.upload_file('/home/ubuntu/shlee/tmp/counts.csv', bucket_name, f"hourly_twit_counts/{endTimeFormatted[:15]}.csv")
+    s3.upload_file('twits.csv', bucket_name, f"hourly_twits/{endTimeFormatted[:15]}.csv")
+    s3.upload_file('counts.csv', bucket_name, f"hourly_twit_counts/{endTimeFormatted[:15]}.csv")
   
     print("Put object to S3 complete")
 

@@ -9,7 +9,6 @@ import boto3
 from io import StringIO
 import argparse
 import re
-import s3fs
 import numpy as np
 
 import nltk
@@ -27,10 +26,11 @@ def parse_args():
     return parser.parse_args()
 
 # 지난 1주일간 데이터만 추출 필요 (목록 가져와서 제목 시작날짜 이상인것만 계산)
-def read_prefix_to_df(prefix, endtime_nodash):
+def read_prefix_to_df(prefix, endtime_nodash, args):
     args = parse_args()
 
     # endtime_nodash = ts_nodash
+
     endtime_str = datetime.strptime(endtime_nodash, "%Y%m%dT%H%M%S").strftime("%Y-%m-%dT%H%M%S")
     endtime = datetime.strptime(endtime_nodash, "%Y%m%dT%H%M%S")
     starttime = endtime - timedelta(days=7)
@@ -42,7 +42,9 @@ def read_prefix_to_df(prefix, endtime_nodash):
         aws_secret_access_key=args.aws_secret_access_key
     )
 
-    s3 = boto3.resource('s3')
+    s3 = boto3.resource('s3',
+        aws_access_key_id=args.aws_access_key_id,
+        aws_secret_access_key=args.aws_secret_access_key)
     bucket_name = 'ghpipeliner'
     bucket = s3.Bucket(bucket_name)
     
@@ -65,10 +67,10 @@ def main():
     token = args.token
 
     ts_nodash_str = datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S").strftime("%Y-%m-%dT%H:%M:%SZ")
+    ts_nodash_15_ago = (datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S") - timedelta(minutes=15)).strftime("%Y%m%dT%H%M%S")
     endTime = datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S") - timedelta(minutes=15)
     endTime_str = (datetime.strptime(args.ts_nodash, "%Y%m%dT%H%M%S") - timedelta(minutes=15)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    # startTime = datetime.strptime(endTime_str, "%Y-%m-%dT%H:%M:%SZ") - timedelta(days=7)
-    # startTime_str = endTime.strftime("%Y%m%dT%H%M%S")
+
     
     s3_client = boto3.client(
         's3',
@@ -79,7 +81,7 @@ def main():
     bucket_name = 'ghpipeliner'
     bucket = s3.Bucket(bucket_name)
     
-    df = read_prefix_to_df("premart/wordcount", endTime_str) # 24 * 7 개 csv 합한 큰 테이블
+    df = read_prefix_to_df("premart/wordcount", ts_nodash_15_ago, args) # 24 * 7 개 csv 합한 큰 테이블
 
     coins = set(df['key'])
 

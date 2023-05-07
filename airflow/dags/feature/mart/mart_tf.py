@@ -9,7 +9,6 @@ import boto3
 from io import StringIO
 import argparse
 import re
-import s3fs
 
 import nltk
 from nltk.stem import WordNetLemmatizer 
