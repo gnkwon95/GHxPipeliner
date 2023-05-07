@@ -105,8 +105,11 @@ def put_ecr(ecr, image_tag):
     
     push_cmd = f"sudo docker push {image_tag}"
     result = subprocess.run(push_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-
     print("put ecr")
+
+    delete_cmd = f"sudo docker rmi $(sudo docker images {image_tag} -q) -f"
+    result = subprocess.run(delete_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    print("delete docker images that has been pushed")
 
 
 if __name__ == "__main__":
