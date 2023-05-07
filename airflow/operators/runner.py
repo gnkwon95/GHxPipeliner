@@ -59,7 +59,7 @@ def main():
     args = argp.parse_args()
     candles = get_ohlcv(args.m, args.t, args.c)
 
-    put_s3(AWS_ACCESS_KEY, AWS_SECRET_KEY, 'hb-airflow-test', f'{args.t} candles', {'candles': candles})
+    put_s3(AWS_ACCESS_KEY, AWS_SECRET_KEY, 'ghpipeliner', f'mart/ohlcv/{args.t} candles', {'candles': candles})
 
 if __name__ == "__main__":
     main()
