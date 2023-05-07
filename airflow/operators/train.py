@@ -93,43 +93,18 @@ def build_docker(ecr, image_tag):
     print(result.stdout, result.stderr)
     print("Create Docker Manifest")
     
-    image_manifest = get_image_manifest(ecr, new_image_tag)
+    return new_image_tag
+
+def put_ecr(ecr, image_tag):
+    response = ecr.get_authorization_token()
+    authorization_token = response['authorizationData'][0]['authorizationToken']
+    user_name, password = base64.b64decode(authorization_token).decode().split(':')
+
+    login_cmd = f"echo {password} | sudo docker login --username AWS --password-stdin 433166909747.dkr.ecr.ap-northeast-2.amazonaws.com"
+    result = subprocess.run(login_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     
-    return new_image_tag, image_manifest
-
-def get_image_manifest(ecr, image_name):
-    response = ecr.get_authorization_token()
-    authorization_token = response['authorizationData'][0]['authorizationToken']
-    user_name, password = base64.b64decode(authorization_token).decode().split(':')
-
-    login_cmd = f"echo {password} | sudo docker login --username AWS --password-stdin 433166909747.dkr.ecr.ap-northeast-2.amazonaws.com"
-    result = subprocess.run(login_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-
-    cmd = f"sudo docker manifest inspect {image_name}"
-    result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-    if result.returncode == 0:
-        print(f"Inspect Result: {result.stdout}")
-        image_manifest = result.stdout
-        return image_manifest
-    else:
-        error_msg = f"Error getting image manifest for {image_name}: {result.stderr.strip()}"
-        raise RuntimeError(error_msg)
-
-def put_ecr(ecr, repository_name, image_manifest, image_tag):
-    response = ecr.get_authorization_token()
-    authorization_token = response['authorizationData'][0]['authorizationToken']
-    user_name, password = base64.b64decode(authorization_token).decode().split(':')
-
-    login_cmd = f"echo {password} | sudo docker login --username AWS --password-stdin 433166909747.dkr.ecr.ap-northeast-2.amazonaws.com"
-    result = subprocess.run(login_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-    # print(f"Docker Image Path: {image_path}")
-    # with open(image_path, 'rb') as image_file:
-    ecr.put_image(
-        registryId="433166909747",
-        repositoryName=repository_name,
-        imageManifest=image_manifest,
-        imageTag="latest"
-    )
+    push_cmd = f"sudo docker push {image_tag}"
+    result = subprocess.run(push_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
     print("put ecr")
 
@@ -166,6 +141,6 @@ if __name__ == "__main__":
         aws_secret_access_key=AWS_SECRET_KEY,
         region_name='ap-northeast-2'
     )
-    new_image_tag, image_manifest = build_docker(ecr, image_tag)
+    new_image_tag = build_docker(ecr, image_tag)
     print("Updating ECR Image")
-    put_ecr(ecr, repository_name='pycaret_lgbm', image_manifest=image_manifest, image_tag=new_image_tag)
+    put_ecr(ecr, image_tag=new_image_tag)
