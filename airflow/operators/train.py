@@ -27,12 +27,8 @@ def load_data(aws_access_key, aws_secret_key, from_dt, to_dt, cols):
         dt_str = dt.strftime('%Y-%m-%d')
         print(f"Reading {dt}...")
         for hr in range(24):
-            candle_file_name = f'{dt + timedelta(hours=hr, minutes=5, seconds=1)} candles.json'
-            try:
-                candle_response = s3.get_object(Bucket='hb-ohlcv-buy-or-sell', Key=candle_file_name)
-            except:
-                candle_file_name = f'{dt + timedelta(hours=hr, minutes=5, seconds=2)} candles.json'
-                candle_response = s3.get_object(Bucket='hb-ohlcv-buy-or-sell', Key=candle_file_name)
+            candle_file_name = f'mart/ohlcv/{dt + timedelta(hours=hr, minutes=0, seconds=0)} candles.json'
+            candle_response = s3.get_object(Bucket='ghpipeliner', Key=candle_file_name)
             candle_obj = json.loads(candle_response['Body'].read().decode('utf-8'))
             
             twitter_file_name = dt_str+"T"+f"{hr:02}"+"00.csv"
