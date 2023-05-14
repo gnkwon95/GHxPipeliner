@@ -1,51 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HB데모</title>
-    <!-- <base href="/" /> -->
-    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!--[if lt IE 9]>
-    <script src="../assets/js/html5shiv.js"></script>
-    <script src="../assets/js/respond.min.js"></script>
-    <![endif]-->
-    <!-- <link href="{{ url_for('static',filename='css/knit.css') }}" rel="stylesheet"> -->
+    <title>pipeliner demo</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
 </head>
 
 <body>
-<nav class="navbar navbar-default navbar-collapse mg-reset" role="navigation">
+<header class="d-flex justify-content-center py-3">
     <ul class="nav nav-pills">
-        <li><font color="blue">XGBoost 데모페이지</font></li>
+        <li class="nav-item">
+            <a class="nav-link active">Demo Page</a>
+        </li>
     </ul>
-</nav>
-
-<div class="container-full">
-    <button type="submit" class="btn btn-success" id="binance" value="ohlcv">불러오기</button>
-    <div class="well pd-bottom-sm clearfix hidden-xs">
-        <form role="form" method="POST">
-            <font size=4><b>open :</b> <input type="text" id="open" name="open" value='{{ open }}' placeholder="" size="20"></font>
-            <br>
-            <font size=4><b>high :</b> <input type="text" id="high" name="high" value='{{ high }}' placeholder="" size="20"></font>
-            <br>
-            <font size=4><b>low :</b> <input type="text" id="low" name="low" value='{{ low }}' placeholder="" size="20"></font>
-            <br>
-            <font size=4><b>volume :</b> <input type="text" id="volume" name="volume" value='{{ volume }}' placeholder="" size="20"></font>
-            <br>
-            <button type="submit" class="btn btn-success" name="submit" value="submit">확인</button>
-        </form>
+</header>
+<div class="container">
+    <div class="row g-5">
+        <div class="col-md-7 col-lg-8">
+            <button type="submit" class="btn btn-success" id="upbit" value="ohlcv">불러오기</button>
+            <div class="well pd-bottom-sm clearfix ">
+                <form role="form" method="POST">
+                    <label class="form-lable"><b>KST Time</b></label>
+                    <input type="text" class="form-control" id="time" name="time" value='{{ time }}' placeholder="" size="20">
+                    <label class="form-lable"><b>Open</b></label>
+                    <input type="text" class="form-control" id="open" name="open" value='{{ open }}' placeholder="" size="20">
+                    <label class="form-lable"><b>High</b></label>
+                    <input type="text" class="form-control" id="high" name="high" value='{{ high }}' placeholder="" size="20">
+                    <label class="form-lable"><b>Low</b></label>
+                    <input type="text" class="form-control" id="low" name="low" value='{{ low }}' placeholder="" size="20">
+                    <label class="form-lable"><b>Close</b></label>
+                    <input type="text" class="form-control" id="close" name="close" value='{{ close }}' placeholder="" size="20">
+                    <label class="form-lable"><b>Volume</b></label>
+                    <input type="text" class="form-control" id="volume" name="volume" value='{{ volume }}' placeholder="" size="20">
+                    <label class="form-lable"><b>Sentiment</b></label>
+                    <input type="text" class="form-control" id="sentiment" name="sentiment" value='{{ sentiment }}' placeholder="" size="20">
+                    <label class="form-lable"><b>New Author Rate</b></label>
+                    <input type="text" class="form-control" id="new_author_rate" name="new_author_rate" value='{{ new_author_rate }}' placeholder="" size="20">
+                    <label class="form-lable"><b>Heavy Author Rate</b></label>
+                    <input type="text" class="form-control" id="heavy_author_rate" name="heavy_author_rate" value='{{ heavy_author_rate }}' placeholder="" size="20">
+                    <button type="submit" class="btn btn-success btn-primary w-100" name="submit" value="submit">확인</button>
+                </form>
+            </div>
+        </div>
+        <div clas="col-md-5 col-lg-4 order-md-last">
+            <h3 id="result">{{result}}</h3>
+        </div>
     </div>
-    <br>
-</div>
-<div>
-    <font size="40"><b id="answer"></b></font>
-</div>
-<div id="pred">
-    <font size="40"><b>예측 {{pred}}</b></font>
 </div>
 
-<script type="text/javascript" src="{{ url_for('static',filename='binance.js') }}"></script>
 
+
+
+<script type="text/javascript" src="{{ url_for('static',filename='upbit.js') }}"></script>
+<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
 </body>
 </html>
